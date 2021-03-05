@@ -1,0 +1,47 @@
+---
+title: "Collins Percentile Graph"
+author: "Sumair Shah"
+date: "3/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+# load new baseball r
+library(baseballr)
+library(tidyr)
+library(dplyr)
+```
+
+```{r}
+team <- baseballr::master_ncaa_team_lu
+
+schools <- team %>% filter(division == 3,year == 2019) 
+
+id <- schools$school_id
+year <- 2019
+
+
+v_table <- expand.grid(id, year)
+
+d3 <- v_table %>%
+  group_by(Var1, Var2) %>%
+  do(ncaa_scrape(.$Var1, .$Var2, "pitching"))
+
+```
+```{r}
+
+d3 <- d3 %>% filter(IP > 8, Player != "Totals", Player!= "Opponent Totals")  
+
+d <- d3 %>% mutate(Innings = ecdf(d3$IP)(IP)*100,Strikeouts = ecdf(d3$SO)(SO)* 100)%>% select(Player,IP,Innings,SO,Strikeouts) %>% filter(Player == "Collins, Mason" | Player == "Cohen, Zach")
+ 
+
+
+x <- d %>%
+  pivot_longer(c(Innings,Strikeouts), names_to = "Stat", values_to = "Percentile") 
+
+
+x %>% ggplot(aes(x = Percentile, y = Stat,color = Player)) + geom_point() + xlim(1,101) + theme_bw() + ylab('Statistic')
+
+```
